@@ -26,10 +26,10 @@
   <header class="border border-green-800 bg-zinc-950 p-3 mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
     <div>
       <h1 class="text-base font-black tracking-widest text-green-400 uppercase">Lunar Outpost Alpha // RF Terminal</h1>
-      <p class="text-[10px] text-green-700">STATION ID: LOA-42-B | OPERATOR: ALEX RIVERA</p>
+      <p class="text-[10px] text-green-700">STATION ID: LOA-42-B | SITE: SHACKLETON RIM (89.9°S) | OPERATOR: ALEX RIVERA</p>
     </div>
     <div class="text-right flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto text-[11px] border-t sm:border-t-0 border-zinc-800 pt-1 sm:pt-0">
-      <span class="text-green-600 font-bold">SIGNAL: DIRECT RF [STABLE]</span>
+      <span class="text-green-600 font-bold">SIGNAL: DIRECT RF [STABLE] // NASA DONKI: SYNCED</span>
       <span id="lmt-clock" class="text-zinc-600 font-mono text-[10px] tracking-tight">SOL 1 :: LUNAR TIME 06:00 LST</span>
     </div>
   </header>
@@ -41,7 +41,7 @@
     <main class="lg:col-span-3 flex flex-col border border-green-800 bg-zinc-950 p-3 overflow-hidden relative">
       <div id="chat-log" class="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin max-h-[55vh] lg:max-h-[60vh]">
         <div class="text-xs text-green-700 italic border-b border-zinc-800 pb-2">
-          [SYSTEM INITIALIZED] Direct RF Link established. Auto-telemetry updates enabled (30s interval).
+          [SYSTEM INITIALIZED] Direct RF Link established. NASA LRO Shackleton Rim coordinates locked. NASA DONKI solar telemetry &amp; auto-updates enabled (30s interval).
         </div>
       </div>
 
@@ -87,6 +87,14 @@
           <li><strong class="text-green-500">Solve Crises:</strong> Alex encounters unique malfunctions each Sol. Guide his repairs.</li>
           <li><strong class="text-green-500">Rest Cycle:</strong> Order Alex to <span class="text-green-300 font-bold">"rest"</span> or <span class="text-green-300 font-bold">"sleep"</span> when fatigued.</li>
         </ul>
+      </div>
+
+      <!-- NASA DATA FEED INDICATOR -->
+      <div class="border-t border-green-900 pt-2 text-[10px] space-y-1">
+        <h3 class="text-green-400 font-bold uppercase">NASA Data Feeds</h3>
+        <p id="nasa-status-text" class="text-green-700 leading-tight">
+          DONKI Space Weather: Active | LRO Site: Shackleton Crater Rim | ECLSS: Online
+        </p>
       </div>
 
       <!-- QUICK COMMAND BUTTONS -->
@@ -144,199 +152,4 @@
     <div id="box-HEALTH" class="p-1.5 bg-zinc-950 border-console-thin relative group">
       <button onclick="openModal('HEALTH')" class="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-green-950 text-green-400 border border-green-500 text-[8px] flex items-center justify-center">!</button>
       <div class="text-green-700 text-[9px] font-bold uppercase">HEALTH</div>
-      <div id="val-HEALTH" class="font-extrabold text-green-400 text-sm">98%</div>
-    </div>
-    <div id="box-FATIGUE" class="p-1.5 bg-zinc-950 border-console-thin relative group">
-      <button onclick="openModal('FATIGUE')" class="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-green-950 text-green-400 border border-green-500 text-[8px] flex items-center justify-center">!</button>
-      <div class="text-green-700 text-[9px] font-bold uppercase">FATIGUE</div>
-      <div id="val-FATIGUE" class="font-extrabold text-green-400 text-sm">18%</div>
-    </div>
-  </footer>
-
-  <!-- MODAL DIALOG -->
-  <div id="telemetry-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-    <div class="bg-zinc-950 border border-green-500 p-5 max-w-md w-full text-xs space-y-3">
-      <div class="flex justify-between items-center border-b border-green-800 pb-2">
-        <h2 id="modal-title" class="font-bold text-green-400 uppercase text-sm">SYSTEM DETAIL</h2>
-        <button onclick="closeModal()" class="text-green-600 hover:text-green-300 font-bold">[X]</button>
-      </div>
-      <p id="modal-body" class="text-green-600">Loading system status details...</p>
-      <button onclick="closeModal()" class="w-full py-1.5 bg-green-950 hover:bg-green-900 border border-green-600 text-green-400 font-bold uppercase">Acknowledge</button>
-    </div>
-  </div>
-
-  <script>
-    const chatLog = document.getElementById('chat-log');
-    const chatForm = document.getElementById('chat-form');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const modal = document.getElementById('telemetry-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalBody = document.getElementById('modal-body');
-
-    let history = [];
-    let currentSol = 1;
-    let currentLunarTime = "06:00 LST";
-    let isRequestPending = false;
-
-    const systemInfo = {
-      PWR: "Photovoltaic Solar Array. Current output varies with panel alignment and lunar dust block.",
-      BATT: "Hab primary lithium storage. Powers vital life support during lunar night cycles.",
-      O2: "Primary atmospheric oxygen scrubbers and emergency reserve tanks.",
-      H2O: "Closed-loop wastewater reclamation and potable water tanks.",
-      FOOD: "Hydroponics unit harvest status and emergency field ration reserves.",
-      RAD: "External radiation telemetry outside Habitat Shell Alpha.",
-      HEALTH: "Bio-monitor metrics (Heart Rate, SpO2, Core Temp).",
-      FATIGUE: "Neurological load and circadian sleep deprivation index."
-    };
-
-    function openModal(key) {
-      modalTitle.innerText = `TELEMETRY :: ${key}`;
-      const currentVal = document.getElementById(`val-${key}`)?.innerText || "N/A";
-      modalBody.innerText = `${systemInfo[key] || 'No extended diagnostics available.'}\n\nCURRENT VALUE: ${currentVal}`;
-      modal.classList.remove('hidden');
-    }
-
-    function closeModal() {
-      modal.classList.add('hidden');
-    }
-
-    function appendMessage(sender, text, type) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = type === 'user' ? 'text-right' : 'text-left';
-      
-      const senderSpan = document.createElement('div');
-      senderSpan.className = type === 'user' ? 'text-[10px] text-zinc-500 uppercase font-bold' : 'text-[10px] text-green-600 uppercase font-bold';
-      senderSpan.innerText = sender;
-
-      const textDiv = document.createElement('div');
-      textDiv.className = type === 'user' 
-        ? 'inline-block bg-zinc-900 border border-zinc-700 text-green-300 px-3 py-1.5 text-xs rounded mt-0.5 text-left max-w-[85%]' 
-        : 'inline-block bg-zinc-950 border border-green-800 text-green-400 px-3 py-1.5 text-xs rounded mt-0.5 max-w-[85%] whitespace-pre-wrap';
-      textDiv.innerText = text;
-
-      msgDiv.appendChild(senderSpan);
-      msgDiv.appendChild(textDiv);
-      chatLog.appendChild(msgDiv);
-      chatLog.scrollTop = chatLog.scrollHeight;
-
-      return textDiv;
-    }
-
-    function sendQuickCommand(text) {
-      userInput.value = text;
-      chatForm.dispatchEvent(new Event('submit'));
-    }
-
-    function updateSolTracker() {
-      document.getElementById('sol-tracker-text').innerText = `SOL ${currentSol} / 13`;
-      const pct = (currentSol / 13) * 100;
-      document.getElementById('sol-progress-bar').style.width = `${pct}%`;
-      document.getElementById('lmt-clock').innerText = `SOL ${currentSol} :: LUNAR TIME ${currentLunarTime}`;
-    }
-
-    function updateTelemetryUI(telemetryData) {
-      if (!telemetryData) return;
-
-      Object.entries(telemetryData).forEach(([key, value]) => {
-        const valEl = document.getElementById(`val-${key}`);
-        const boxEl = document.getElementById(`box-${key}`);
-
-        if (valEl) valEl.innerText = value;
-
-        const numVal = parseInt(value, 10);
-
-        if (boxEl && !isNaN(numVal)) {
-          if ((key === 'BATT' || key === 'PWR') && numVal < 70) {
-            boxEl.className = "p-1.5 bg-red-950 border-2 border-red-500 font-bold relative group";
-            if (valEl) valEl.className = "font-black text-red-400 text-sm";
-          } else if ((key === 'BATT' || key === 'PWR') && numVal >= 70) {
-            boxEl.className = "p-1.5 bg-zinc-950 border-console-thin relative group";
-            if (valEl) valEl.className = "font-extrabold text-green-400 text-sm";
-          }
-        }
-      });
-    }
-
-    async function sendTransmission(messageText, isAutoPing = false) {
-      if (isRequestPending) return;
-
-      isRequestPending = true;
-      sendBtn.disabled = true;
-
-      if (!isAutoPing) {
-        appendMessage('MISSION CONTROL', messageText, 'user');
-        userInput.value = '';
-      } else {
-        const autoNotice = document.createElement('div');
-        autoNotice.className = 'text-[10px] text-zinc-600 italic text-center border-y border-zinc-900 py-0.5 my-1';
-        autoNotice.innerText = '[AUTOMATED TELEMETRY BEACON :: 30S INTERVAL Ping Received]';
-        chatLog.appendChild(autoNotice);
-      }
-
-      const loadingDiv = appendMessage('ALEX RIVERA', 'TRANSMITTING VIA RF LINK...', 'bot');
-
-      try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            message: messageText, 
-            history,
-            currentSol,
-            lunarTime: currentLunarTime
-          })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Transmission failed.');
-        }
-
-        loadingDiv.innerText = data.reply;
-
-        if (data.nextLunarTime) {
-          currentLunarTime = data.nextLunarTime;
-        }
-
-        if (data.shouldAdvanceSol) {
-          currentSol += 1;
-          currentLunarTime = "06:00 LST";
-          appendMessage('SYSTEM', `--- REST CYCLE COMPLETE :: ADVANCING TO SOL ${currentSol} ---`, 'bot');
-        }
-
-        updateSolTracker();
-
-        if (data.telemetry) {
-          updateTelemetryUI(data.telemetry);
-        }
-
-        history.push({ role: 'user', parts: [{ text: messageText }] });
-        history.push({ role: 'model', parts: [{ text: data.reply }] });
-
-      } catch (err) {
-        loadingDiv.innerText = 'ERROR: ' + err.message;
-        loadingDiv.classList.add('text-red-500');
-      } finally {
-        isRequestPending = false;
-        sendBtn.disabled = false;
-      }
-    }
-
-    chatForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const message = userInput.value.trim();
-      if (!message) return;
-      sendTransmission(message, false);
-    });
-
-    // 30-SECOND UNPROMPTED AUTOMATED UPDATE TIMER
-    setInterval(() => {
-      if (!isRequestPending) {
-        sendTransmission("[AUTOMATED 30S TELEMETRY & STATUS UPDATE REQUEST]", true);
-      }
-    }, 30000);
-  </script>
-</body>
-</html>
+      <div id="val-HEALTH" class="font
